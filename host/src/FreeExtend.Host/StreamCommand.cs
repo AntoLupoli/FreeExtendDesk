@@ -48,6 +48,7 @@ internal static class StreamCommand
         string? csvPath = null;
         int fps = 60, kbps = 40_000, seconds = 0;
         bool skipAdb = false, keepDisplay = false, noCleanup = false;
+        bool emitStatus = false, stopOnStdin = false;     // for a controlling program (the GUI): see HostStatusLine / StdinStopWatcher
         int simulateGpuLossAfter = 0;                 // solo per prove: dopo N secondi finge che la GPU sia stata persa
         for (int i = 0; i < args.Length; i++)
         {
@@ -58,8 +59,12 @@ internal static class StreamCommand
             else if (args[i] == "--no-adb") skipAdb = true;
             else if (args[i] == "--keep-display") keepDisplay = true;
             else if (args[i] == "--no-cleanup") noCleanup = true;
+            else if (args[i] == "--status") emitStatus = true;
+            else if (args[i] == "--stop-on-stdin") stopOnStdin = true;
             else if (args[i] == "--simulate-gpu-loss-after" && i + 1 < args.Length) simulateGpuLossAfter = int.Parse(args[++i]);
         }
+
+        void Status(HostStatus s) { if (emitStatus) Console.WriteLine(HostStatusLine.Format(s)); }
 
         if (VirtualOutputFinder.Find() == null)
         {
@@ -131,15 +136,21 @@ internal static class StreamCommand
 
         var server = new StreamServer(Port, OnHello);
         serverRef = server;
-        server.ClientConnected += c => Console.WriteLine($"Tablet connesso: {c.W}x{c.H}@{c.Hz} Hz");
+        server.ClientConnected += c =>
+        {
+            Console.WriteLine($"Tablet connesso: {c.W}x{c.H}@{c.Hz} Hz");
+            Status(new HostStatus(HostStatusKind.Connected, c.W, c.H, c.Hz));
+        };
         server.ClientError += e => Console.Error.WriteLine($"Client scartato: {e.Message}");
         server.RenderedAck += ts => stats.OnRendered(ts, CaptureClock.NowUs());
         server.PongReceived += (sent, recv) => stats.OnPong(sent, recv);
         server.Start();
         Console.WriteLine($"In attesa del tablet (porta {Port}). Apri l'app FreeExtend sul tablet. Ctrl+C per fermare.");
+        Status(new HostStatus(HostStatusKind.Waiting));
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
+        if (stopOnStdin) StdinStopWatcher.Start(Console.In, cts.Cancel);
         var serverTask = server.RunAsync(cts.Token);
 
         // Se il cavo viene staccato e riattaccato adb perde la regola reverse: la si ricrea, cosi il tablet si riconnette da solo.
@@ -238,7 +249,12 @@ internal static class StreamCommand
                 long nowMs = Environment.TickCount64;
                 if (connected != wasConnected)
                 {
-                    if (!connected) { Console.WriteLine("Tablet disconnesso: in attesa di una nuova connessione..."); disconnectedSince = nowMs; }
+                    if (!connected)
+                    {
+                        Console.WriteLine("Tablet disconnesso: in attesa di una nuova connessione...");
+                        Status(new HostStatus(HostStatusKind.Disconnected));
+                        disconnectedSince = nowMs;
+                    }
                     wasConnected = connected;
                 }
                 if (connected) disconnectedSince = nowMs;
@@ -313,6 +329,7 @@ internal static class StreamCommand
                     double mbit = (by - prevBytes) * 8 / 1e6;
                     prevBytes = by; lastReport = now;
                     Console.WriteLine($"  {s.Fps,5:F1} fps  RTT {s.RttMs,5:F1} ms  pipeline p50 {s.PipelineP50Ms,5:F1} / p95 {s.PipelineP95Ms,5:F1} ms  codifica {s.EncodeMsAvg,5:F1} ms  {mbit,5:F1} Mbit/s  scartati {s.DroppedFrames}  coda {server.QueuedVideoPackets}");
+                    Status(new HostStatus(HostStatusKind.Fps, Fps: s.Fps));
                     csv?.WriteLine(string.Create(CultureInfo.InvariantCulture,
                         $"{(now - startTick) / 1000.0:F1},{s.Fps:F1},{s.RttMs:F2},{s.PipelineP50Ms:F2},{s.PipelineP95Ms:F2},{s.EncodeMsAvg:F2},{s.DroppedFrames},{mbit:F2},{server.QueuedVideoPackets}"));
                 }
