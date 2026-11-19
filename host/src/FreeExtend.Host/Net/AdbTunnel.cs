@@ -75,7 +75,7 @@ public static class AdbTunnel
         if (code != 0) throw new InvalidOperationException($"adb reverse non riuscito (codice {code}): {output.Trim()}");
     }
 
-    private static (int ExitCode, string Output) Run(string args, int timeoutMs)
+    public static (int ExitCode, string Output) Run(string args, int timeoutMs)
     {
         var psi = new ProcessStartInfo(AdbPath(), args)
         {
