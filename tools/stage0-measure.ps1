@@ -1,6 +1,6 @@
-# Misura della tappa 0: avvia l'app sul tablet, una sorgente di immagini sul monitor virtuale e il comando `stream`
-# per N secondi, poi stampa il riassunto. Sorgenti: 'gdi' (finestra PowerShell, ~33 fps) o 'browser' (canvas a 60 fps).
-# Uso: powershell -NoProfile -File tools\stage0-measure.ps1 -Scenario browser -Seconds 60 -Screen DISPLAY60 -Csv out.csv
+# Stage 0 measurement: starts the app on the tablet, an image source on the virtual monitor and the `stream`
+# command for N seconds, then prints the summary. Sources: 'gdi' (PowerShell window, ~33 fps) or 'browser' (60 fps canvas).
+# Usage: powershell -NoProfile -File tools\stage0-measure.ps1 -Scenario browser -Seconds 60 -Screen DISPLAY60 -Csv out.csv
 param(
     [ValidateSet('gdi', 'browser')][string]$Scenario = 'browser',
     [int]$Seconds = 60,
@@ -13,7 +13,7 @@ $root = Split-Path $PSScriptRoot -Parent
 . "$root\tools\env.ps1" | Out-Null
 $exe = Join-Path $root 'host\src\FreeExtend.Host\bin\Debug\net8.0-windows\FreeExtend.Host.exe'
 
-# Il monitor virtuale deve essere nel desktop prima di mostrarci la sorgente; il suo numero cambia a ogni reload del driver.
+# The virtual monitor must be in the desktop before showing the source on it; its number changes on every driver reload.
 $null = & $exe display-test attach
 if (-not $Screen) { $Screen = (& $exe virtual-output).Trim().TrimStart('\', '.') }
 
@@ -23,7 +23,7 @@ adb shell am start -n it.freeextend.display/.MainActivity | Out-Null
 $src = $null; $profileDir = $null
 Add-Type -AssemblyName System.Windows.Forms
 $scr = [System.Windows.Forms.Screen]::AllScreens | Where-Object { $_.DeviceName.TrimStart('\', '.') -eq $Screen }
-if (-not $scr) { throw "Schermo $Screen non trovato" }
+if (-not $scr) { throw "Screen $Screen not found" }
 if ($Scenario -eq 'gdi') {
     $src = Start-Process powershell -ArgumentList '-NoProfile', '-File', "$root\tools\motion-window.ps1", '-Seconds', ($Seconds + 15), '-Screen', $Screen -PassThru -WindowStyle Hidden
 } else {

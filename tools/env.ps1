@@ -1,6 +1,6 @@
-# Uso: . .\tools\env.ps1
-# Rende disponibile adb (Android SDK platform-tools) nella sessione PowerShell corrente. Lo cerca, in ordine:
-#   1. gia nel PATH; 2. ANDROID_HOME; 3. ANDROID_SDK_ROOT; 4. %LOCALAPPDATA%\Android\Sdk (posizione di Android Studio).
+# Usage: . .\tools\env.ps1
+# Makes adb (Android SDK platform-tools) available in the current PowerShell session. It looks for it, in order:
+#   1. already in PATH; 2. ANDROID_HOME; 3. ANDROID_SDK_ROOT; 4. %LOCALAPPDATA%\Android\Sdk (Android Studio's default location).
 $adb = (Get-Command adb -ErrorAction SilentlyContinue).Source
 if (-not $adb) {
     $roots = @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, (Join-Path $env:LOCALAPPDATA 'Android\Sdk')) | Where-Object { $_ }
@@ -10,9 +10,9 @@ if (-not $adb) {
     }
 }
 if (-not $adb) {
-    Write-Error "adb non trovato: installa l'Android SDK (platform-tools) o Android Studio, oppure imposta ANDROID_HOME."
+    Write-Error "adb not found: install the Android SDK (platform-tools) or Android Studio, or set ANDROID_HOME."
     return
 }
 $dir = Split-Path $adb
 if (($env:PATH -split ';') -notcontains $dir) { $env:PATH = "$dir;$env:PATH" }
-Write-Host "adb pronto: $dir"
+Write-Host "adb ready: $dir"

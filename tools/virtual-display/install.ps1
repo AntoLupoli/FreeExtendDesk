@@ -1,16 +1,16 @@
-# Installa il Virtual Display Driver (solo il driver video) con devcon, senza usare VDD Control, e ne scrive la configurazione.
-# Uso (PowerShell come amministratore):
+# Installs the Virtual Display Driver (the video driver only) with devcon, without VDD Control, and writes its configuration.
+# Usage (PowerShell as administrator):
 #   powershell -ExecutionPolicy Bypass -File .\tools\virtual-display\install.ps1
-#   ... -Gpu "NVIDIA GeForce RTX 3050 Laptop GPU"   scheda che ospita il monitor virtuale (stessa dell'encoder); di solito si sceglie da sola
-#   ... -ExtraModes 1920x1080,2560x1440             risoluzioni in piu per il tuo tablet (il driver ne offre di base tre, tutte 16:10)
-#   ... -ConfigOnly [-OutFile file.xml]             scrive solo la configurazione, senza installare (non serve l'amministratore)
+#   ... -Gpu "NVIDIA GeForce RTX 3050 Laptop GPU"   graphics card that hosts the virtual monitor (the same as the encoder); usually chosen automatically
+#   ... -ExtraModes 1920x1080,2560x1440             extra resolutions for your tablet (the driver offers three by default, all 16:10)
+#   ... -ConfigOnly [-OutFile file.xml]             only writes the configuration, without installing (no administrator needed)
 #
-# Cosa fa, in ordine:
-#   1. scarica il driver se manca (get-driver.ps1: hash SHA256 e firma SignPath verificati);
-#   2. sceglie la scheda grafica e scrive la configurazione in C:\VirtualDisplayDriver\vdd_settings.xml;
-#   3. installa il dispositivo Root\MttVDD con devcon.exe (firmato Microsoft);
-#   4. stampa schermi e dispositivo risultanti.
-# Non tocca test signing, Secure Boot né il driver audio. Rimozione: remove.ps1.
+# What it does, in order:
+#   1. downloads the driver if missing (get-driver.ps1: SHA256 hash and SignPath signature verified);
+#   2. picks the graphics card and writes the configuration to C:\VirtualDisplayDriver\vdd_settings.xml;
+#   3. installs the Root\MttVDD device with devcon.exe (Microsoft-signed);
+#   4. prints the resulting screens and device.
+# It does not touch test signing, Secure Boot or the audio driver. To remove: remove.ps1.
 param(
     [string]$Gpu = '',
     [string[]]$ExtraModes = @(),
@@ -20,9 +20,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $template = Join-Path $PSScriptRoot 'vdd_settings.freeextend.xml'
-if (-not (Test-Path $template)) { throw "File mancante: $template" }
+if (-not (Test-Path $template)) { throw "Missing file: $template" }
 
-# --- scheda grafica ------------------------------------------------------------------------------
+# --- graphics card ------------------------------------------------------------------------------
 function Get-GraphicsAdapters {
     @(Get-CimInstance Win32_VideoController |
         Where-Object { $_.Name -and $_.Name -notmatch 'Microsoft Basic|Remote|Virtual Display|Parsec|Meta Virtual|Mirage' } |
@@ -31,27 +31,27 @@ function Get-GraphicsAdapters {
 
 function Select-Gpu([string]$wanted, [string[]]$adapters, [bool]$interactive) {
     if ($wanted) { return $wanted }
-    if ($adapters.Count -eq 0) { throw 'Nessuna scheda grafica trovata: indica quella da usare con -Gpu "nome".' }
+    if ($adapters.Count -eq 0) { throw 'No graphics card found: name the one to use with -Gpu "name".' }
     if ($adapters.Count -eq 1) { return $adapters[0] }
     $nvidia = @($adapters | Where-Object { $_ -match 'NVIDIA' })
-    if ($nvidia.Count -ge 1) { return $nvidia[0] }          # NVENC e l'encoder piu rapido provato; vedi README (portatili a due schede)
+    if ($nvidia.Count -ge 1) { return $nvidia[0] }          # NVENC is the fastest encoder tested; see the README (laptops with two cards)
     if (-not $interactive) { return $adapters[0] }
-    Write-Host 'Piu schede grafiche: su quale deve girare il monitor virtuale (e la codifica)?'
+    Write-Host 'Several graphics cards: which one should run the virtual monitor (and the encoding)?'
     for ($i = 0; $i -lt $adapters.Count; $i++) { Write-Host ("  {0}) {1}" -f ($i + 1), $adapters[$i]) }
-    $n = [int](Read-Host 'Numero')
-    if ($n -lt 1 -or $n -gt $adapters.Count) { throw 'Scelta non valida.' }
+    $n = [int](Read-Host 'Number')
+    if ($n -lt 1 -or $n -gt $adapters.Count) { throw 'Invalid choice.' }
     return $adapters[$n - 1]
 }
 
 $adapters = Get-GraphicsAdapters
 $gpuName = Select-Gpu $Gpu $adapters (-not $ConfigOnly)
-Write-Host "Scheda per il monitor virtuale: $gpuName"
+Write-Host "Graphics card for the virtual monitor: $gpuName"
 
-# --- configurazione ------------------------------------------------------------------------------
+# --- configuration ------------------------------------------------------------------------------
 [xml]$xml = Get-Content $template -Raw
 $xml.vdd_settings.gpu.friendlyname = [string]$gpuName
 foreach ($m in $ExtraModes) {
-    if ($m -notmatch '^(\d{3,5})x(\d{3,5})$') { throw "Risoluzione non valida '$m': usa il formato LARGHEZZAxALTEZZA, per esempio 1920x1080." }
+    if ($m -notmatch '^(\d{3,5})x(\d{3,5})$') { throw "Invalid resolution '$m': use the format WIDTHxHEIGHT, for example 1920x1080." }
     $r = $xml.CreateElement('resolution')
     foreach ($pair in @(@('width', $Matches[1]), @('height', $Matches[2]), @('refresh_rate', '60'))) {
         $e = $xml.CreateElement($pair[0]); $e.InnerText = $pair[1]; [void]$r.AppendChild($e)
@@ -62,42 +62,42 @@ foreach ($m in $ExtraModes) {
 if ($ConfigOnly) {
     $target = if ($OutFile) { $OutFile } else { Join-Path $PSScriptRoot 'vdd_settings.generated.xml' }
     $xml.Save($target)
-    Write-Host "Configurazione scritta in $target (nessuna installazione)."
+    Write-Host "Configuration written to $target (nothing installed)."
     return
 }
 
-# --- installazione (serve l'amministratore) ------------------------------------------------------
+# --- installation (needs administrator) ----------------------------------------------------------
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $isAdmin) { throw 'Serve PowerShell come amministratore (tasto destro > Esegui come amministratore).' }
+if (-not $isAdmin) { throw 'PowerShell as administrator is required (right-click > Run as administrator).' }
 
 & (Join-Path $PSScriptRoot 'get-driver.ps1')
 
 $root   = Join-Path $PSScriptRoot 'vdd-download\extracted'
-$drvDir = Join-Path $root 'SignedDrivers\x86\VDD'     # (cartella "x86" ma contiene il driver x64, INF NTamd64)
+$drvDir = Join-Path $root 'SignedDrivers\x86\VDD'     # (the folder is called "x86" but holds the x64 driver, INF NTamd64)
 $devcon = Join-Path $root 'Dependencies\devcon.exe'
 $inf    = Join-Path $drvDir 'MttVDD.inf'
-foreach ($p in $devcon, $inf) { if (-not (Test-Path $p)) { throw "File mancante: $p" } }
+foreach ($p in $devcon, $inf) { if (-not (Test-Path $p)) { throw "Missing file: $p" } }
 
-Write-Host '1) Verifica firme...'
+Write-Host '1) Checking signatures...'
 foreach ($f in 'MttVDD.dll', 'mttvdd.cat') {
     $s = Get-AuthenticodeSignature (Join-Path $drvDir $f)
     if ($s.Status -ne 'Valid' -or $s.SignerCertificate.Subject -notmatch 'SignPath Foundation') {
-        throw "Firma non valida su ${f}: $($s.Status) / $($s.SignerCertificate.Subject)"
+        throw "Invalid signature on ${f}: $($s.Status) / $($s.SignerCertificate.Subject)"
     }
     Write-Host "   $f OK ($($s.SignerCertificate.Subject -replace ',.*$',''))"
 }
 
-Write-Host '2) Configurazione in C:\VirtualDisplayDriver ...'
+Write-Host '2) Configuration in C:\VirtualDisplayDriver ...'
 New-Item -ItemType Directory -Force 'C:\VirtualDisplayDriver' | Out-Null
 $xml.Save('C:\VirtualDisplayDriver\vdd_settings.xml')
 
-Write-Host '3) Installazione del dispositivo Root\MttVDD ...'
+Write-Host '3) Installing the Root\MttVDD device ...'
 & $devcon install $inf 'Root\MttVDD'
-if ($LASTEXITCODE -ne 0) { throw "devcon ha restituito il codice $LASTEXITCODE (vedi messaggio sopra)" }
+if ($LASTEXITCODE -ne 0) { throw "devcon returned code $LASTEXITCODE (see the message above)" }
 
-Write-Host '4) Risultato:'
+Write-Host '4) Result:'
 Start-Sleep -Seconds 3
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Screen]::AllScreens | ForEach-Object { "   $($_.DeviceName) $($_.Bounds.Width)x$($_.Bounds.Height) primary=$($_.Primary)" }
 Get-PnpDevice -Class Display -ErrorAction SilentlyContinue | Select-Object Status, FriendlyName | Format-Table -AutoSize | Out-String | Write-Host
-Write-Host 'Il nuovo monitor compare "non attaccato": FreeExtend lo attacca da solo quando il tablet si connette.'
+Write-Host 'The new monitor shows up as "not attached": FreeExtend attaches it by itself when the tablet connects.'

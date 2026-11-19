@@ -1,5 +1,5 @@
-# Verifica il monitor virtuale: attaccato al desktop, 2304x1440 a 60 Hz, modi a 90 Hz disponibili.
-# Uso: powershell -NoProfile -File tools\virtual-display\check.ps1   (esce con codice 1 se qualcosa non torna)
+# Checks the virtual monitor: attached to the desktop, 2304x1440 at 60 Hz, 90 Hz modes available.
+# Usage: powershell -NoProfile -File tools\virtual-display\check.ps1   (exits with code 1 if something is wrong)
 $src = @'
 using System; using System.Runtime.InteropServices; using System.Collections.Generic;
 public class VddCheck {
@@ -20,10 +20,10 @@ public class VddCheck {
       Console.WriteLine("{0}: attached={1} current={2}x{3}@{4}Hz pos={5},{6}", d.DeviceName, attached, cur.dmPelsWidth, cur.dmPelsHeight, cur.dmDisplayFrequency, cur.dmPositionX, cur.dmPositionY);
       bool ok = attached && cur.dmPelsWidth == w && cur.dmPelsHeight == h && cur.dmDisplayFrequency == hz;
       bool has90 = modes.Contains(w + "x" + h + "@90");
-      Console.WriteLine("modo {0}x{1}@{2}: {3} | modo @90 Hz offerto: {4}", w, h, hz, ok ? "OK" : "NON impostato", has90);
+      Console.WriteLine("mode {0}x{1}@{2}: {3} | @90 Hz mode offered: {4}", w, h, hz, ok ? "OK" : "NOT set", has90);
       return (ok && has90) ? 0 : 1;
     }
-    Console.WriteLine("Monitor 'Virtual Display Driver' non trovato");
+    Console.WriteLine("Monitor 'Virtual Display Driver' not found");
     return 1;
   }
 }
