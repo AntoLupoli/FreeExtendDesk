@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- MODELLO della configurazione FreeExtend per Virtual Display Driver 25.7.23.
+     install.ps1 lo copia in C:\VirtualDisplayDriver\vdd_settings.xml sostituendo la scheda grafica (friendlyname) con quella del PC
+     e aggiungendo le risoluzioni richieste con -ExtraModes. Non copiarlo a mano senza cambiare il nome della scheda. -->
+<vdd_settings>
+    <monitors>
+        <count>1</count>
+    </monitors>
+    <gpu>
+        <!-- Scheda che ospita il monitor virtuale: deve essere la stessa che codifica il video. Valore del PC su cui e stato provato. -->
+        <friendlyname>NVIDIA GeForce RTX 3050 Laptop GPU</friendlyname>
+    </gpu>
+    <global>
+        <!-- Refresh replicati su tutte le risoluzioni: 60 Hz di partenza, 90 Hz per il tentativo della tappa 2. -->
+        <g_refresh_rate>60</g_refresh_rate>
+        <g_refresh_rate>90</g_refresh_rate>
+    </global>
+    <resolutions>
+        <!-- Risoluzione nativa del Tab S10 FE in orizzontale (docs/device-profile.md). -->
+        <resolution>
+            <width>2304</width>
+            <height>1440</height>
+            <refresh_rate>60</refresh_rate>
+        </resolution>
+        <!-- Stesso rapporto 16:10, per i ripieghi di ModeSelector (T10). -->
+        <resolution>
+            <width>1920</width>
+            <height>1200</height>
+            <refresh_rate>60</refresh_rate>
+        </resolution>
+        <resolution>
+            <width>2560</width>
+            <height>1600</height>
+            <refresh_rate>60</refresh_rate>
+        </resolution>
+    </resolutions>
+    <options>
+        <CustomEdid>false</CustomEdid>
+        <PreventSpoof>false</PreventSpoof>
+        <EdidCeaOverride>false</EdidCeaOverride>
+        <!-- false: il puntatore viene disegnato dentro l'immagine catturata, altrimenti non compare sul tablet (verificato in T10). -->
+        <HardwareCursor>false</HardwareCursor>
+        <SDR10bit>false</SDR10bit>
+        <HDRPlus>false</HDRPlus>
+        <!-- Log del driver spento (era acceso solo per capire quale GPU usa); riaccendere con la pipe: LOGGING true -->
+        <logging>false</logging>
+        <debuglogging>false</debuglogging>
+    </options>
+</vdd_settings>

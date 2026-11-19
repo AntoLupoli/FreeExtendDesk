@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Versione monocromatica per le icone a tema di Android 13+ (il sistema la colora). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M32,34 H68 A3,3 0 0 1 71,37 V59 A3,3 0 0 1 68,62 H32 A3,3 0 0 1 29,59 V37 A3,3 0 0 1 32,34 Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="3.2"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M45,62 L43,70 M55,62 L57,70 M39,71 H61"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M59.5,47 H79.5 A2.5,2.5 0 0 1 82,49.5 V64.5 A2.5,2.5 0 0 1 79.5,67 H59.5 A2.5,2.5 0 0 1 57,64.5 V49.5 A2.5,2.5 0 0 1 59.5,47 Z"
+        android:fillColor="#FF000000" />
+</vector>

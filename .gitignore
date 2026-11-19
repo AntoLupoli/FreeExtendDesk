@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+build/
+.gradle/
+*.apk
+local.properties
+.superpowers/
+*.h264
+tools/virtual-display/vdd-download/
+docs/measurements/tablet-*.png

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>FreeExtend - animazione di prova</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Animazione a ~60 fps disegnata dal browser (compositing GPU): gradiente in movimento, barre, contatore in ms e testo
+// piccolo. Serve come sorgente "tipo video" per le misure della tappa 0.
+const c = document.getElementById('c');
+const g = c.getContext('2d', { alpha: false });
+function resize() { c.width = Math.round(innerWidth * devicePixelRatio); c.height = Math.round(innerHeight * devicePixelRatio); }
+addEventListener('resize', resize); resize();
+const t0 = performance.now();
+function frame(now) {
+  const t = now - t0, w = c.width, h = c.height;
+  const grad = g.createLinearGradient(0, 0, w, h);
+  const k = (t / 4000) % 1;
+  grad.addColorStop(0, `hsl(${(k * 360) | 0}, 70%, 25%)`);
+  grad.addColorStop(1, `hsl(${((k * 360) + 120) % 360 | 0}, 70%, 12%)`);
+  g.fillStyle = grad; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 6; i++) {                                  // barre che scorrono a velocita diverse
+    const x = ((t * (0.2 + i * 0.12)) % (w + 200)) - 200;
+    g.fillStyle = `hsla(${(i * 55 + k * 360) % 360 | 0}, 90%, 60%, 0.85)`;
+    g.fillRect(x, 80 + i * (h / 8), 160, h / 12);
+  }
+  g.fillStyle = '#fff';
+  g.font = `bold ${Math.round(h / 9)}px Consolas, monospace`;
+  g.fillText(String(Math.round(t)).padStart(8, ' ') + ' ms', 60, h / 2);
+  g.font = `${Math.round(h / 80)}px "Segoe UI", sans-serif`;
+  for (let i = 0; i < 8; i++) g.fillText('The quick brown fox jumps over the lazy dog 0123456789 - FreeExtend', 60, h - 200 + i * 24);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
