@@ -1,21 +1,28 @@
 #Requires -RunAsAdministrator
-# Rimuove il Virtual Display Driver (dispositivo + pacchetto driver).
-# Uso: PowerShell come amministratore ->  .\tools\virtual-display\remove.ps1
-# Alternativa grafica: "VDD Control.exe" -> Uninstall, oppure Gestione dispositivi ->
-# Schede video -> Virtual Display Driver -> Disinstalla dispositivo.
+# Removes the Virtual Display Driver (device + driver package) and the configuration folder that install.ps1 created.
+# Usage: PowerShell as administrator ->  .\tools\virtual-display\remove.ps1
+# Graphical alternative: "VDD Control.exe" -> Uninstall, or Device Manager -> Display adapters -> Virtual Display Driver -> Uninstall device.
 $ErrorActionPreference = 'Stop'
 
 $devcon = Join-Path $PSScriptRoot 'vdd-download\extracted\Dependencies\devcon.exe'
-if (-not (Test-Path $devcon)) { throw "devcon.exe non trovato: $devcon (riestrarre lo zip, vedi README.md)" }
+if (-not (Test-Path $devcon)) {
+    Write-Host 'devcon.exe not found: downloading the (verified) driver package first...'
+    & (Join-Path $PSScriptRoot 'get-driver.ps1')
+}
+if (-not (Test-Path $devcon)) { throw "devcon.exe not found: $devcon (see README.md)" }
 
-Write-Host '1) Rimozione del dispositivo Root\MttVDD...'
+Write-Host '1) Removing the Root\MttVDD device...'
 & $devcon remove 'Root\MttVDD'
 
-Write-Host '2) Rimozione del pacchetto driver...'
+Write-Host '2) Removing the driver package...'
 $pkgs = Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*mttvdd.inf' }
-if (-not $pkgs) { Write-Host '   nessun pacchetto mttvdd.inf nello store driver.' }
+if (-not $pkgs) { Write-Host '   no mttvdd.inf package in the driver store.' }
 foreach ($p in $pkgs) {
     Write-Host "   pnputil /delete-driver $($p.Driver)"
     pnputil /delete-driver $p.Driver /uninstall /force | Out-Host
 }
-Write-Host 'Fatto. Se resta un monitor fantasma, riavvia il PC.'
+
+Write-Host '3) Removing the configuration folder C:\VirtualDisplayDriver...'
+if (Test-Path 'C:\VirtualDisplayDriver') { Remove-Item 'C:\VirtualDisplayDriver' -Recurse -Force }
+
+Write-Host 'Done. If a ghost monitor remains, restart the PC.'
