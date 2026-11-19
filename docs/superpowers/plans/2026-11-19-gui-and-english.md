@@ -18,7 +18,6 @@
 - Nessuna scrittura nel registro/installazione senza un click esplicito sul pulsante relativo.
 - L'eseguibile dell'host e SEMPRE `host\src\FreeExtend.Host\bin\Debug\net8.0-windows\FreeExtend.Host.exe` (la preferenza grafica e legata a quel percorso).
 - Porta host 27183, pacchetto Android `it.freeextend.display`.
-- Ogni commit termina con la riga `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
 - Nessuno screenshot con dati personali: ritagliare alla sola finestra, guardare, cancellare.
 
 ## Review Focus
