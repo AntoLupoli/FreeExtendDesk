@@ -35,7 +35,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback, StreamClient.Listener {
             setTextColor(Color.WHITE)
             textSize = 22f
             gravity = Gravity.CENTER
-            text = "FreeExtend\nIn attesa del PC..."
+            text = "FreeExtend\nWaiting for the PC..."
         }
         setContentView(FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
@@ -103,13 +103,13 @@ class MainActivity : Activity(), SurfaceHolder.Callback, StreamClient.Listener {
             d.configure(width, height, paramSets)
         } catch (e: RuntimeException) {
             Log.e(TAG, "decoder non avviato: ${e.message}")
-            runOnUiThread { status.text = "Decoder non avviato\n${e.javaClass.simpleName}" }
+            runOnUiThread { status.text = "Decoder failed to start\n${e.javaClass.simpleName}" }
             return
         }
         decoder = d
         // Chiede al sistema di far girare lo schermo al ritmo del flusso (altrimenti con contenuto a 60 fps puo restare a 90 Hz adattivo).
         s.setFrameRate(fps.toFloat(), Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE)
-        runOnUiThread { status.text = "Connesso ${width}x$height@$fps\ndecoder: ${d.codecName}" }
+        runOnUiThread { status.text = "Connected ${width}x$height@$fps\ndecoder: ${d.codecName}" }
         Log.i(TAG, "config ${width}x$height@$fps, decoder ${d.codecName}")
     }
 
@@ -126,7 +126,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback, StreamClient.Listener {
         decoder = null
         firstFrameShown = false
         client = StreamClient(listener = this).also { it.start(currentHello()) }
-        runOnUiThread { status.visibility = TextView.VISIBLE; status.text = "FreeExtend\nRiconnessione..." }
+        runOnUiThread { status.visibility = TextView.VISIBLE; status.text = "FreeExtend\nReconnecting..." }
     }
 
     override fun onVideo(annexB: ByteArray, keyframe: Boolean, timestampUs: Long) {
@@ -139,7 +139,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback, StreamClient.Listener {
         firstFrameShown = false
         runOnUiThread {
             status.visibility = TextView.VISIBLE
-            status.text = "FreeExtend\nIn attesa del PC..."
+            status.text = "FreeExtend\nWaiting for the PC..."
         }
     }
 
