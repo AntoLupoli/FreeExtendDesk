@@ -111,6 +111,7 @@ internal static class StreamCommand
         Pipeline? pipeline = null;
         DisplayMode? pendingMode = null;
         long bytesOut = 0;
+        DisplayMode? chosenMode = null;
 
         StreamServer? serverRef = null;
         void OnPacket(EncodedPacket p)
@@ -128,6 +129,7 @@ internal static class StreamCommand
             var requested = new DisplayMode(hello.W, hello.H, Math.Min((int)hello.Hz, fps));
             var mode = ModeSelector.Choose(requested, supported);
             lock (gate) pendingMode = mode;
+            chosenMode = mode;                                  // what the controlling program should show (not what the tablet asked for)
             byte[] paramSets;
             lock (gate) paramSets = pipeline?.Encoder.ParameterSets ?? Array.Empty<byte>();
             Console.WriteLine($"Tablet chiede {hello.W}x{hello.H}@{hello.Hz}: modo scelto {mode.Width}x{mode.Height}@{mode.RefreshHz}");
@@ -139,7 +141,9 @@ internal static class StreamCommand
         server.ClientConnected += c =>
         {
             Console.WriteLine($"Tablet connesso: {c.W}x{c.H}@{c.Hz} Hz");
-            Status(new HostStatus(HostStatusKind.Connected, c.W, c.H, c.Hz));
+            var m = chosenMode;
+            Status(m is { } cm ? new HostStatus(HostStatusKind.Connected, cm.Width, cm.Height, cm.RefreshHz)
+                               : new HostStatus(HostStatusKind.Connected, c.W, c.H, c.Hz));
         };
         server.ClientError += e => Console.Error.WriteLine($"Client scartato: {e.Message}");
         server.RenderedAck += ts => stats.OnRendered(ts, CaptureClock.NowUs());
