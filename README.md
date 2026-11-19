@@ -1,4 +1,4 @@
-# FreeExtend
+# FreeExtendDesk
 
 **Use an Android tablet as a wired second monitor for Windows, over USB-C, with low latency.**
 

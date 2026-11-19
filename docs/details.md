@@ -1,4 +1,4 @@
-# FreeExtend: details
+# FreeExtendDesk: details
 
 ## How it works
 
