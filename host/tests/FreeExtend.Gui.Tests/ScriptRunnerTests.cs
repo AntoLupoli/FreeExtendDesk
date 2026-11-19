@@ -32,6 +32,15 @@ public class ScriptRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_script_that_ends_normally_after_a_failing_native_command_still_succeeds()
+    {
+        // remove.ps1 and install.ps1 end with a native command (pnputil/devcon) whose code can be non-zero for benign reasons
+        // (e.g. 3010 = reboot needed): only an explicit "exit N" or a throw may decide the result.
+        var r = await ScriptRunner.RunAsync(Script("cmd /c exit 5"), elevated: false);
+        Assert.Equal(0, r.ExitCode);
+    }
+
+    [Fact]
     public async Task A_script_that_throws_gives_a_non_zero_exit_code_and_its_message()
     {
         var r = await ScriptRunner.RunAsync(Script("$ErrorActionPreference = 'Stop'; throw 'boom happened'"), elevated: false);

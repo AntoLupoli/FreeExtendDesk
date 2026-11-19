@@ -25,4 +25,6 @@ foreach ($p in $pkgs) {
 Write-Host '3) Removing the configuration folder C:\VirtualDisplayDriver...'
 if (Test-Path 'C:\VirtualDisplayDriver') { Remove-Item 'C:\VirtualDisplayDriver' -Recurse -Force }
 
+$left = Get-PnpDevice -Class Display -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like '*Virtual Display Driver*' }
+if ($left) { Write-Host 'Note: the virtual display device is still listed; restart Windows to finish removing it.' }
 Write-Host 'Done. If a ghost monitor remains, restart the PC.'

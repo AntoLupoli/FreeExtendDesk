@@ -300,6 +300,12 @@ internal sealed class MainForm : Form
         try { report = await Uninstaller.RunAsync(_paths, tabletReady); }
         finally { SetBusy(false); }
 
+        if (report.Cancelled)
+        {
+            await RefreshAllAsync("Uninstall cancelled: nothing was removed.");
+            return;
+        }
+
         string Line(string name, bool? ok) => ok switch { true => $"  ✔ {name}", false => $"  ✘ {name}: not removed", null => $"  - {name}: skipped (tablet not connected)" };
         string summary = "Uninstall finished:\n" +
             Line("Virtual display driver", report.DriverRemoved) + "\n" +

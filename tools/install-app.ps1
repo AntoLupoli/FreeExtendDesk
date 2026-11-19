@@ -25,7 +25,7 @@ if ($Force -or -not (Test-Path $apk)) {
         # local.properties is not in the repository: tell Gradle where this PC's Android SDK is.
         $sdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
         if (-not (Test-Path $sdk)) { throw "Android SDK not found in ${sdk}: install it or create android\local.properties with sdk.dir=..." }
-        Set-Content $localProps ('sdk.dir=' + ($sdk -replace '\', '/')) -Encoding ascii
+        Set-Content $localProps ('sdk.dir=' + $sdk.Replace('\', '/')) -Encoding ascii
     }
     Push-Location (Join-Path $root 'android')
     try { & .\gradlew.bat assembleDebug --console=plain -q } finally { Pop-Location }

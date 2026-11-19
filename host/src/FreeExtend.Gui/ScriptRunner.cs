@@ -16,7 +16,10 @@ internal static class ScriptRunner
     public static Task<ScriptResult> RunAsync(string scriptPath, bool elevated, params string[] args) => Task.Run(() =>
     {
         string log = Path.Combine(Path.GetTempPath(), "freeextend-" + Guid.NewGuid().ToString("N") + ".log");
-        string call = "& " + PowerShellQuoting.Quote(scriptPath) + string.Concat(args.Select(a => " " + PowerShellQuoting.Quote(a)));
+        // The script runs in its own "powershell -File" so its exit code follows -File rules: 0 unless the script calls "exit N" or throws.
+        // (Called with "&", a script that merely ends would report the code of the last native command it ran, e.g. pnputil's 3010 = reboot needed.)
+        string call = "& powershell.exe -NoProfile -ExecutionPolicy Bypass -File " + PowerShellQuoting.Quote(scriptPath)
+                      + string.Concat(args.Select(a => " " + PowerShellQuoting.Quote(a)));
         string q = PowerShellQuoting.Quote(log);
         // try/catch so a script that throws gives a non-zero exit code (a bare "exit $LASTEXITCODE" would report 0 after a throw).
         string command = $"try {{ {call} *>&1 | Out-File -Encoding utf8 {q}; exit $LASTEXITCODE }} catch {{ $_ | Out-String | Out-File -Append -Encoding utf8 {q}; exit 1 }}";
