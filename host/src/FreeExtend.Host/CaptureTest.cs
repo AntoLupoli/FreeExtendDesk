@@ -24,7 +24,7 @@ internal static class CaptureTest
         }
 
         using var source = new DesktopDuplicationSource(output);
-        Console.WriteLine($"Cattura {source.Width}x{source.Height} su {output ?? "(prima uscita attaccata)"} per {seconds} s...");
+        Console.WriteLine($"Capturing {source.Width}x{source.Height} on {output ?? "(first attached output)"} for {seconds} s...");
 
         long start = Environment.TickCount64, lastReport = start;
         int frames = 0, framesThisSecond = 0, timeouts = 0;
@@ -39,7 +39,7 @@ internal static class CaptureTest
                 {
                     SavePng(source, frame.Texture, png);
                     pngSaved = true;
-                    Console.WriteLine($"PNG salvato: {png}");
+                    Console.WriteLine($"PNG saved: {png}");
                 }
             }
             else timeouts++;
@@ -47,17 +47,17 @@ internal static class CaptureTest
             long now = Environment.TickCount64;
             if (now - lastReport >= 1000)
             {
-                Console.WriteLine($"  {framesThisSecond,3} fps  (timeout totali: {timeouts})");
+                Console.WriteLine($"  {framesThisSecond,3} fps  (total timeouts: {timeouts})");
                 framesThisSecond = 0; lastReport = now;
                 seconds_elapsed++;
                 if (lossEvery > 0 && seconds_elapsed % lossEvery == 0)
                 {
-                    Console.WriteLine("  -- accesso perso (simulato) --");
+                    Console.WriteLine("  -- access lost (simulated) --");
                     source.SimulateAccessLoss();
                 }
             }
         }
-        Console.WriteLine($"Totale: {frames} frame, {timeouts} timeout in {seconds} s");
+        Console.WriteLine($"Total: {frames} frames, {timeouts} timeouts in {seconds} s");
         return frames > 0 ? 0 : 2;
     }
 

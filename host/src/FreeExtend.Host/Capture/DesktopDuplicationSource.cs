@@ -85,8 +85,8 @@ public sealed class DesktopDuplicationSource : IFrameSource
             adapter!.Dispose();
         }
         throw new InvalidOperationException(wanted == null
-            ? "Nessuna uscita attaccata al desktop"
-            : $"Uscita '{wanted}' non trovata (usa il comando list-outputs)");
+            ? "No output attached to the desktop"
+            : $"Output '{wanted}' not found (use the list-outputs command)");
     }
 
     /// <summary>Accetta sia <c>\\.\DISPLAY58</c> sia la forma corta <c>DISPLAY58</c> (comoda da riga di comando).</summary>

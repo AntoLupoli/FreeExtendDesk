@@ -13,7 +13,7 @@ public static class Program
 
         if (args.Length == 0)
         {
-            Console.WriteLine("Uso: FreeExtend.Host <comando>\n  list-outputs\n  capture-test [--output <nome>] [--seconds N] [--png file]");
+            Console.WriteLine("Usage: FreeExtend.Host <command>\n  stream [--status] [--stop-on-stdin] [--fps N] [--kbps N] [--seconds N] [--csv file] [--keep-display]\n  list-outputs | gpu-status | setup-gpu [--remove] | encoder-probe | virtual-output\n  display-test | capture-test | encode-test | encode-synthetic | tunnel-test | encoder-cycle-test");
             return 1;
         }
 
@@ -62,7 +62,7 @@ public static class Program
                 return CaptureTest.Run(args[1..]);
 
             default:
-                Console.Error.WriteLine($"Comando sconosciuto: {args[0]}");
+                Console.Error.WriteLine($"Unknown command: {args[0]}");
                 return 1;
         }
     }

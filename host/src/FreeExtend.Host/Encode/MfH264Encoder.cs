@@ -174,7 +174,7 @@ public sealed class MfH264Encoder : IVideoEncoder
             string name = act.GetString(TransformAttributeKeys.MftFriendlyNameAttribute);
             if (!EncoderVendor.IsCompatible(adapterName, name))
             {
-                errors.Add($"{name}: e di un altro produttore rispetto alla scheda del monitor ({adapterName})");
+                errors.Add($"{name}: belongs to a different vendor than the monitor's graphics adapter ({adapterName})");
                 continue;                                 // con un device di un altra scheda fallirebbe con un E_FAIL generico
             }
             if (seen++ < skip) continue;                  // MftIndex: per provare gli altri encoder elencati
@@ -215,7 +215,7 @@ public sealed class MfH264Encoder : IVideoEncoder
             _mft.SetOutputType(0, outType, 0);
             for (int i = 0; i < 16; i++)
             {
-                try { using var t = _mft.GetInputAvailableType(0, i); _codecApiLog.Add("ingresso accettato: " + SubtypeName(t.GetGUID(MediaTypeAttributeKeys.Subtype))); }
+                try { using var t = _mft.GetInputAvailableType(0, i); _codecApiLog.Add("input accepted: " + SubtypeName(t.GetGUID(MediaTypeAttributeKeys.Subtype))); }
                 catch { break; }
             }
         }
@@ -252,7 +252,7 @@ public sealed class MfH264Encoder : IVideoEncoder
 
     private void ConfigureCodecApi()
     {
-        if (_codecApi == null) { _codecApiLog.Add("ICodecAPI non disponibile su questo MFT"); return; }
+        if (_codecApi == null) { _codecApiLog.Add("ICodecAPI not available on this MFT"); return; }
         SetCodec("LowLatencyMode", CodecApiKeys.LowLatencyMode, true);
         SetCodec("CommonLowLatency", CodecApiKeys.CommonLowLatency, true);
         SetCodec("CommonRealTime", CodecApiKeys.CommonRealTime, true);
@@ -384,7 +384,7 @@ public sealed class MfH264Encoder : IVideoEncoder
         {
             // Il thread e ancora dentro l'MFT: liberare l'MFT sotto i suoi piedi potrebbe far crashare il processo. Meglio perdere
             // qualche oggetto COM fino alla fine del processo.
-            Console.Error.WriteLine("Encoder: il thread degli eventi non si e fermato; l'MFT non viene liberato.");
+            Console.Error.WriteLine("Encoder: the event thread did not stop; the MFT is not released.");
             return;
         }
         try { _events.Dispose(); } catch { }

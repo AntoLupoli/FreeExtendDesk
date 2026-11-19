@@ -68,27 +68,27 @@ internal static class StreamCommand
 
         if (VirtualOutputFinder.Find() == null)
         {
-            Console.Error.WriteLine("Virtual Display Driver non installato (vedi tools\\virtual-display\\README.md).");
+            Console.Error.WriteLine("Virtual Display Driver not installed (see tools\\virtual-display\\README.md).");
             return 2;
         }
         var supported = DriverModes.ReadInstalled();
         string virtualName = VirtualOutputFinder.Find()!;
         string? exePath = Environment.ProcessPath;
         if (exePath != null && !new GpuPreference().IsHighPerformance(exePath))
-            Console.Error.WriteLine($"Attenzione: per questo eseguibile ({exePath}) non e impostata la preferenza grafica 'Prestazioni elevate'. " +
-                $"Su un portatile con due schede l'encoder NVIDIA potrebbe non attivarsi: se la pipeline non parte, lancia \"{exePath}\" setup-gpu.");
+            Console.Error.WriteLine($"Warning: the graphics preference 'High performance' is not set for this executable ({exePath}). " +
+                $"On a laptop with two graphics cards the NVIDIA encoder may not start: if the pipeline does not start, run \"{exePath}\" setup-gpu.");
         // Un monitor rimasto attaccato da una chiusura anomala non deve restare su un desktop dove nessuno lo vede.
         if (!keepDisplay && !noCleanup)
         {
             try { DisplayController.Detach(virtualName); }
-            catch (Exception ex) { Console.Error.WriteLine($"Pulizia iniziale del monitor non riuscita: {ex.Message}"); }
+            catch (Exception ex) { Console.Error.WriteLine($"Initial monitor cleanup failed: {ex.Message}"); }
         }
         // Stacca il monitor anche se la finestra della console viene chiusa, al logoff o allo spegnimento.
         if (!keepDisplay)
             ConsoleExitGuard.Register(() => { var n = VirtualOutputFinder.Find(); if (n != null) DisplayController.Detach(n); });
         if (supported.Count == 0)
         {
-            Console.Error.WriteLine($"Nessun modo trovato in {DriverModes.InstalledSettingsPath}.");
+            Console.Error.WriteLine($"No display modes found in {DriverModes.InstalledSettingsPath}.");
             return 2;
         }
 
@@ -98,8 +98,8 @@ internal static class StreamCommand
             if (state != DeviceState.Ready)
             {
                 Console.Error.WriteLine(state == DeviceState.Unauthorized
-                    ? "Il tablet non ha autorizzato il PC: accetta 'Consenti debug USB' sul tablet."
-                    : "Nessun tablet collegato (cavo USB, debug USB attivo).");
+                    ? "The tablet has not authorized this PC: accept 'Allow USB debugging' on the tablet."
+                    : "No tablet connected (USB cable, USB debugging on).");
                 return 3;
             }
             AdbTunnel.EnsureReverse(Port);
@@ -132,7 +132,7 @@ internal static class StreamCommand
             chosenMode = mode;                                  // what the controlling program should show (not what the tablet asked for)
             byte[] paramSets;
             lock (gate) paramSets = pipeline?.Encoder.ParameterSets ?? Array.Empty<byte>();
-            Console.WriteLine($"Tablet chiede {hello.W}x{hello.H}@{hello.Hz}: modo scelto {mode.Width}x{mode.Height}@{mode.RefreshHz}");
+            Console.WriteLine($"Tablet asks for {hello.W}x{hello.H}@{hello.Hz}: chosen mode {mode.Width}x{mode.Height}@{mode.RefreshHz}");
             return ConfigPayload.Encode((ushort)mode.Width, (ushort)mode.Height, (ushort)mode.RefreshHz, paramSets);
         }
 
@@ -140,16 +140,16 @@ internal static class StreamCommand
         serverRef = server;
         server.ClientConnected += c =>
         {
-            Console.WriteLine($"Tablet connesso: {c.W}x{c.H}@{c.Hz} Hz");
+            Console.WriteLine($"Tablet connected: {c.W}x{c.H}@{c.Hz} Hz");
             var m = chosenMode;
             Status(m is { } cm ? new HostStatus(HostStatusKind.Connected, cm.Width, cm.Height, cm.RefreshHz)
                                : new HostStatus(HostStatusKind.Connected, c.W, c.H, c.Hz));
         };
-        server.ClientError += e => Console.Error.WriteLine($"Client scartato: {e.Message}");
+        server.ClientError += e => Console.Error.WriteLine($"Client rejected: {e.Message}");
         server.RenderedAck += ts => stats.OnRendered(ts, CaptureClock.NowUs());
         server.PongReceived += (sent, recv) => stats.OnPong(sent, recv);
         server.Start();
-        Console.WriteLine($"In attesa del tablet (porta {Port}). Apri l'app FreeExtend sul tablet. Ctrl+C per fermare.");
+        Console.WriteLine($"Waiting for the tablet (port {Port}). Open the FreeExtend app on the tablet. Press Ctrl+C to stop.");
         Status(new HostStatus(HostStatusKind.Waiting));
 
         using var cts = new CancellationTokenSource();
@@ -168,7 +168,7 @@ internal static class StreamCommand
                     try
                     {
                         if (AdbTunnel.Current() == DeviceState.Ready && AdbTunnel.EnsureReverseIfMissing(Port))
-                            Console.WriteLine("adb reverse ricreato (cavo riattaccato?).");
+                            Console.WriteLine("adb reverse recreated (cable plugged in again?).");
                     }
                     catch (Exception) { /* adb non risponde ora: si riprova */ }
                     cts.Token.WaitHandle.WaitOne(3000);
@@ -194,12 +194,12 @@ internal static class StreamCommand
         // Butta la pipeline: al giro dopo si ricostruisce da capo (nuovo device D3D11, nuovo encoder) con lo stesso modo.
         void DropPipeline(string reason)
         {
-            Console.WriteLine($"Pipeline scartata: {reason}");
+            Console.WriteLine($"Pipeline dropped: {reason}");
             var old = pipeline;
             pipeline = null;
             lastFrame = null;
             sched.Reset();
-            try { old?.Dispose(); } catch (Exception ex) { Console.Error.WriteLine($"  chiusura della pipeline: {ex.Message}"); }
+            try { old?.Dispose(); } catch (Exception ex) { Console.Error.WriteLine($"  closing the pipeline: {ex.Message}"); }
         }
 
         try
@@ -215,18 +215,18 @@ internal static class StreamCommand
                 {
                     if (pipeline == null || pipeline.Mode != mode)
                     {
-                        if (pipeline != null) DropPipeline("cambio di modo");
+                        if (pipeline != null) DropPipeline("mode change");
                         try
                         {
                             var output = display.EnsureAsync(mode, cts.Token).GetAwaiter().GetResult();
                             pipeline = new Pipeline(output, mode, kbps, OnPacket);
-                            Console.WriteLine($"Pipeline pronta: {output.DeviceName} {pipeline.Source.Width}x{pipeline.Source.Height}, encoder {pipeline.Encoder.EncoderName}");
+                            Console.WriteLine($"Pipeline ready: {output.DeviceName} {pipeline.Source.Width}x{pipeline.Source.Height}, encoder {pipeline.Encoder.EncoderName}");
                             sched.Reset();                     // la texture dell'ultima cattura apparteneva alla pipeline vecchia
                         }
                         catch (EncoderUnavailableException ex)
                         {
                             // Problema di configurazione: riprovare non serve. Si spiega cosa fare e si esce.
-                            Console.Error.WriteLine($"ERRORE: {ex.Message}");
+                            Console.Error.WriteLine($"ERROR: {ex.Message}");
                             exitCode = 4;
                             break;
                         }
@@ -234,11 +234,11 @@ internal static class StreamCommand
                         {
                             if (++pipelineFailures >= MaxPipelineFailures)
                             {
-                                Console.Error.WriteLine($"ERRORE: la pipeline non parte dopo {pipelineFailures} tentativi: {ex.Message.Trim()}");
+                                Console.Error.WriteLine($"ERROR: the pipeline does not start after {pipelineFailures} attempts: {ex.Message.Trim()}");
                                 exitCode = 1;
                                 break;
                             }
-                            Console.Error.WriteLine($"Pipeline non avviata ({pipelineFailures}/{MaxPipelineFailures}): {ex.Message.Trim()}. Riprovo tra 1 s.");
+                            Console.Error.WriteLine($"Pipeline did not start ({pipelineFailures}/{MaxPipelineFailures}): {ex.Message.Trim()}. Retrying in 1 s.");
                             lock (gate) pendingMode = mode;
                             cts.Token.WaitHandle.WaitOne(1000);
                             continue;
@@ -255,7 +255,7 @@ internal static class StreamCommand
                 {
                     if (!connected)
                     {
-                        Console.WriteLine("Tablet disconnesso: in attesa di una nuova connessione...");
+                        Console.WriteLine("Tablet disconnected: waiting for a new connection...");
                         Status(new HostStatus(HostStatusKind.Disconnected));
                         disconnectedSince = nowMs;
                     }
@@ -269,9 +269,9 @@ internal static class StreamCommand
                 // collegamento lo riattacca. Cosi nulla resta su uno schermo invisibile se il cavo resta staccato.
                 if (!connected && !keepDisplay && nowMs - disconnectedSince >= DetachGraceMs)
                 {
-                    DropPipeline($"nessun tablet da {DetachGraceMs / 1000} s");
-                    try { display.RemoveAsync().GetAwaiter().GetResult(); Console.WriteLine("Monitor virtuale staccato dal desktop (si riattacca al prossimo collegamento)."); }
-                    catch (Exception ex) { Console.Error.WriteLine($"Impossibile staccare il monitor: {ex.Message}"); }
+                    DropPipeline($"no tablet for {DetachGraceMs / 1000} s");
+                    try { display.RemoveAsync().GetAwaiter().GetResult(); Console.WriteLine("Virtual monitor detached from the desktop (it attaches again at the next connection)."); }
+                    catch (Exception ex) { Console.Error.WriteLine($"Could not detach the monitor: {ex.Message}"); }
                     continue;
                 }
 
@@ -279,7 +279,7 @@ internal static class StreamCommand
                 if (pl.Source.DeviceLost)
                 {
                     lock (gate) pendingMode = pl.Mode;
-                    DropPipeline("GPU persa (device removed/reset)");
+                    DropPipeline("GPU lost (device removed/reset)");
                     cts.Token.WaitHandle.WaitOne(500);
                     continue;
                 }
@@ -312,7 +312,7 @@ internal static class StreamCommand
                 catch (Exception ex) when (ex is SharpGen.Runtime.SharpGenException or InvalidOperationException)
                 {
                     lock (gate) pendingMode = pl.Mode;
-                    DropPipeline($"errore GPU/encoder: {ex.Message}");
+                    DropPipeline($"GPU/encoder error: {ex.Message}");
                     cts.Token.WaitHandle.WaitOne(500);
                     continue;
                 }
@@ -332,7 +332,7 @@ internal static class StreamCommand
                     var s = stats.Snapshot();
                     double mbit = (by - prevBytes) * 8 / 1e6;
                     prevBytes = by; lastReport = now;
-                    Console.WriteLine($"  {s.Fps,5:F1} fps  RTT {s.RttMs,5:F1} ms  pipeline p50 {s.PipelineP50Ms,5:F1} / p95 {s.PipelineP95Ms,5:F1} ms  codifica {s.EncodeMsAvg,5:F1} ms  {mbit,5:F1} Mbit/s  scartati {s.DroppedFrames}  coda {server.QueuedVideoPackets}");
+                    Console.WriteLine($"  {s.Fps,5:F1} fps  RTT {s.RttMs,5:F1} ms  pipeline p50 {s.PipelineP50Ms,5:F1} / p95 {s.PipelineP95Ms,5:F1} ms  encode {s.EncodeMsAvg,5:F1} ms  {mbit,5:F1} Mbit/s  dropped {s.DroppedFrames}  queue {server.QueuedVideoPackets}");
                     Status(new HostStatus(HostStatusKind.Fps, Fps: s.Fps));
                     csv?.WriteLine(string.Create(CultureInfo.InvariantCulture,
                         $"{(now - startTick) / 1000.0:F1},{s.Fps:F1},{s.RttMs:F2},{s.PipelineP50Ms:F2},{s.PipelineP95Ms:F2},{s.EncodeMsAvg:F2},{s.DroppedFrames},{mbit:F2},{server.QueuedVideoPackets}"));
@@ -342,22 +342,22 @@ internal static class StreamCommand
         catch (OperationCanceledException) { /* Ctrl+C durante l'attesa del monitor */ }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Errore: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
             exitCode = 1;
         }
         finally
         {
             var sum = stats.Summary();
             if (sum.Samples > 0)
-                Console.WriteLine($"RIASSUNTO ({sum.Samples} frame disegnati): pipeline p50 {sum.PipelineP50Ms:F1} ms, p95 {sum.PipelineP95Ms:F1} ms, max {sum.PipelineMaxMs:F1} ms | RTT mediano {sum.RttMedianMs:F2} ms | codifica media (cattura->pacchetto) {sum.EncodeMsAvg:F1} ms | frame scartati {sum.DroppedFrames}");
+                Console.WriteLine($"SUMMARY ({sum.Samples} frames drawn): pipeline p50 {sum.PipelineP50Ms:F1} ms, p95 {sum.PipelineP95Ms:F1} ms, max {sum.PipelineMaxMs:F1} ms | median RTT {sum.RttMedianMs:F2} ms | mean encode (capture->packet) {sum.EncodeMsAvg:F1} ms | dropped frames {sum.DroppedFrames}");
             csv?.Dispose();
             pipeline?.Dispose();
             server.DisposeAsync().AsTask().Wait(2000);
             try { serverTask.Wait(2000); } catch { /* arresto */ }
             if (!keepDisplay)
             {
-                try { display.RemoveAsync().GetAwaiter().GetResult(); Console.WriteLine("Monitor virtuale staccato dal desktop."); }
-                catch (Exception ex) { Console.Error.WriteLine($"Impossibile staccare il monitor: {ex.Message}"); }
+                try { display.RemoveAsync().GetAwaiter().GetResult(); Console.WriteLine("Virtual monitor detached from the desktop."); }
+                catch (Exception ex) { Console.Error.WriteLine($"Could not detach the monitor: {ex.Message}"); }
             }
         }
         return exitCode;

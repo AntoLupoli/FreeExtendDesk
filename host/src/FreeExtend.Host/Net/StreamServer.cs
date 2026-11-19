@@ -114,7 +114,7 @@ public sealed class StreamServer : IAsyncDisposable
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                throw new TimeoutException($"handshake non completato entro {_handshakeTimeoutMs} ms");
+                throw new TimeoutException($"handshake not completed within {_handshakeTimeoutMs} ms");
             }
             if (!magic.AsSpan().SequenceEqual(MessageCodec.Magic)) return;                  // magic sbagliato: chiudi
             await stream.WriteAsync(MessageCodec.Magic);

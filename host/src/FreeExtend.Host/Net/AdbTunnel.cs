@@ -72,7 +72,7 @@ public static class AdbTunnel
     public static void EnsureReverse(int port)
     {
         var (code, output) = Run($"reverse tcp:{port} tcp:{port}", timeoutMs: 15_000);
-        if (code != 0) throw new InvalidOperationException($"adb reverse non riuscito (codice {code}): {output.Trim()}");
+        if (code != 0) throw new InvalidOperationException($"adb reverse failed (code {code}): {output.Trim()}");
     }
 
     public static (int ExitCode, string Output) Run(string args, int timeoutMs)
@@ -84,13 +84,13 @@ public static class AdbTunnel
             UseShellExecute = false,
             CreateNoWindow = true,
         };
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("impossibile avviare adb");
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException("could not start adb");
         var stdout = p.StandardOutput.ReadToEndAsync();
         var stderr = p.StandardError.ReadToEndAsync();
         if (!p.WaitForExit(timeoutMs))
         {
             try { p.Kill(true); } catch { }
-            throw new TimeoutException($"adb {args} non risponde");
+            throw new TimeoutException($"adb {args} is not responding");
         }
         Task.WaitAll(stdout, stderr);
         return (p.ExitCode, stdout.Result + stderr.Result);

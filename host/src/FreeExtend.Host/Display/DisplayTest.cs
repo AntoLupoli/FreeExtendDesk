@@ -7,9 +7,9 @@ internal static class DisplayTest
     {
         string action = args.Length > 0 ? args[0] : "status";
         string? name = VirtualOutputFinder.Find();
-        Console.WriteLine($"Monitor virtuale: {name ?? "NON TROVATO"}");
+        Console.WriteLine($"Virtual monitor: {name ?? "NOT FOUND"}");
         if (name == null) return 2;
-        Console.WriteLine($"Modi del driver: {string.Join(", ", DriverModes.ReadInstalled().Select(m => $"{m.Width}x{m.Height}@{m.RefreshHz}"))}");
+        Console.WriteLine($"Driver modes: {string.Join(", ", DriverModes.ReadInstalled().Select(m => $"{m.Width}x{m.Height}@{m.RefreshHz}"))}");
 
         var driver = new VirtualDisplayDriver();
         switch (action)
@@ -22,14 +22,14 @@ internal static class DisplayTest
                     mode = new DisplayMode(int.Parse(p[0]), int.Parse(p[1]), int.Parse(p[2]));
                 }
                 var info = await driver.EnsureAsync(mode, CancellationToken.None);
-                Console.WriteLine($"Attaccato: {info.DeviceName} {info.Width}x{info.Height} su {info.AdapterName}");
+                Console.WriteLine($"Attached: {info.DeviceName} {info.Width}x{info.Height} on {info.AdapterName}");
                 break;
             case "detach":
                 await new VirtualDisplayDriver().EnsureAsync(DisplayController.CurrentMode(name) ?? new DisplayMode(2304, 1440, 60), CancellationToken.None); // fissa il nome
                 DisplayController.Detach(name);
                 break;
         }
-        Console.WriteLine($"Stato: attaccato={DisplayController.IsAttached(name)}, modo={DisplayController.CurrentMode(name)}");
+        Console.WriteLine($"State: attached={DisplayController.IsAttached(name)}, mode={DisplayController.CurrentMode(name)}");
         return 0;
     }
 }

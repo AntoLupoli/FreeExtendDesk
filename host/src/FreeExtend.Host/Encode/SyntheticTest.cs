@@ -67,7 +67,7 @@ internal static class SyntheticTest
             capThread = new Thread(() => { while (!stopCapture) { if (source.TryAcquireFrame(50, out _, captureMode == "nocopy" ? () => false : null)) captured++; } }) { IsBackground = true };
             capThread.Start();
         }
-        Console.WriteLine($"Sintetico: {encoder.EncoderName} {w}x{h}, richiesto fino a {fps} fps");
+        Console.WriteLine($"Synthetic: {encoder.EncoderName} {w}x{h}, requested up to {fps} fps");
         var lat = new List<double>(); int packets = 0;
         var gate = new object();
         encoder.PacketReady += p => { lock (gate) { packets++; lat.Add(CaptureClock.NowUs() - p.CaptureUs); } };
@@ -83,14 +83,14 @@ internal static class SyntheticTest
         }
         Thread.Sleep(300);
         stopCapture = true; capThread?.Join(500);
-        if (captureMode != null) Console.WriteLine($"Cattura parallela ({captureMode}): {captured} frame copiati");
+        if (captureMode != null) Console.WriteLine($"Parallel capture ({captureMode}): {captured} frames copied");
         lock (gate)
         {
             var s = lat.OrderBy(x => x).ToList();
-            Console.WriteLine($"Codificati {n} frame in {seconds} s = {n / (double)seconds:F1} fps; pacchetti {packets}");
-            if (s.Count > 0) Console.WriteLine($"Latenza ingresso->pacchetto: media {s.Average() / 1000:F2} ms, p50 {s[s.Count / 2] / 1000:F2} ms, p95 {s[(int)(s.Count * 0.95)] / 1000:F2} ms");
+            Console.WriteLine($"Encoded {n} frames in {seconds} s = {n / (double)seconds:F1} fps; packets {packets}");
+            if (s.Count > 0) Console.WriteLine($"Input->packet latency: mean {s.Average() / 1000:F2} ms, p50 {s[s.Count / 2] / 1000:F2} ms, p95 {s[(int)(s.Count * 0.95)] / 1000:F2} ms");
             var t = encoder.Timing;
-            Console.WriteLine($"Dettaglio: preparazione {t.PrepareMs:F2} ms, codifica {t.EncodeMs:F2} ms");
+            Console.WriteLine($"Detail: prepare {t.PrepareMs:F2} ms, encode {t.EncodeMs:F2} ms");
         }
         return 0;
     }
@@ -132,10 +132,10 @@ internal static class EncoderCycleTest
             long t0 = sw.ElapsedMilliseconds;
             encoder.Dispose();
             long disposeMs = sw.ElapsedMilliseconds - t0;
-            Console.WriteLine($"ciclo {c}: pacchetti {packets}, Dispose {disposeMs} ms, thread eventi fermato = {encoder.EventThreadStopped}");
+            Console.WriteLine($"cycle {c}: packets {packets}, Dispose {disposeMs} ms, event thread stopped = {encoder.EventThreadStopped}");
             if (!encoder.EventThreadStopped) failures++;
         }
-        Console.WriteLine(failures == 0 ? $"OK: {cycles} cicli senza thread bloccati." : $"FALLITO: {failures} cicli con il thread bloccato.");
+        Console.WriteLine(failures == 0 ? $"OK: {cycles} cycles without stuck threads." : $"FAILED: {failures} cycles with a stuck thread.");
         return failures == 0 ? 0 : 1;
     }
 }

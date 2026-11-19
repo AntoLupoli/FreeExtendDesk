@@ -8,8 +8,8 @@ public sealed class EncoderUnavailableException(string adapterName, IReadOnlyLis
     : InvalidOperationException(Build(adapterName, details))
 {
     private static string Build(string adapterName, IReadOnlyList<string> details) =>
-        $"Nessun encoder H.264 hardware utilizzabile con la scheda '{adapterName}'. " +
-        $"Su un portatile con due schede Windows deve eseguire questo programma sulla scheda NVIDIA: lancia \"{Environment.ProcessPath}\" setup-gpu " +
-        "(imposta 'Prestazioni elevate' solo per questo eseguibile) e riavvia. " +
-        (details.Count > 0 ? "Dettagli: " + string.Join(" | ", details) : "");
+        $"No usable hardware H.264 encoder for the graphics adapter '{adapterName}'. " +
+        $"On a laptop with two graphics cards Windows must run this program on the NVIDIA card: run \"{Environment.ProcessPath}\" setup-gpu " +
+        "(it sets 'High performance' only for this executable) and restart. " +
+        (details.Count > 0 ? "Details: " + string.Join(" | ", details) : "");
 }

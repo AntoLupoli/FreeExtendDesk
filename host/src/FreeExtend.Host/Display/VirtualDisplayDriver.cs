@@ -22,7 +22,7 @@ public sealed class VirtualDisplayDriver : IVirtualDisplay
     public async Task<OutputInfo> EnsureAsync(DisplayMode mode, CancellationToken ct)
     {
         string name = VirtualOutputFinder.Find()
-            ?? throw new InvalidOperationException("Virtual Display Driver non installato (vedi tools/virtual-display/README.md).");
+            ?? throw new InvalidOperationException("Virtual Display Driver not installed (see tools/virtual-display/README.md).");
         _deviceName = name;
 
         DisplayController.AttachWithMode(name, mode);
@@ -36,7 +36,7 @@ public sealed class VirtualDisplayDriver : IVirtualDisplay
             if (info != null && info.Width == mode.Width && info.Height == mode.Height) return info;
             await Task.Delay(100, ct);
         }
-        throw new TimeoutException($"Il monitor virtuale {name} non e comparso a {mode.Width}x{mode.Height} entro 10 secondi.");
+        throw new TimeoutException($"The virtual monitor {name} did not appear at {mode.Width}x{mode.Height} within 10 seconds.");
     }
 
     public Task RemoveAsync()

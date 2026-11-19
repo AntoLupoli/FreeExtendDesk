@@ -19,7 +19,7 @@ public static class HelloPayload
 
     public static (ushort W, ushort H, ushort Hz, byte Codecs) Decode(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < Size) throw new ProtocolException($"Hello troppo corto ({payload.Length} byte, servono {Size})");
+        if (payload.Length < Size) throw new ProtocolException($"Hello too short ({payload.Length} bytes, {Size} needed)");
         return (BinaryPrimitives.ReadUInt16BigEndian(payload[..2]),
                 BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2, 2)),
                 BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2)),
@@ -44,7 +44,7 @@ public static class ConfigPayload
 
     public static (ushort W, ushort H, ushort Fps, byte[] ParamSets) Decode(ReadOnlySpan<byte> payload)
     {
-        if (payload.Length < FixedSize) throw new ProtocolException($"Config troppo corto ({payload.Length} byte, servono almeno {FixedSize})");
+        if (payload.Length < FixedSize) throw new ProtocolException($"Config too short ({payload.Length} bytes, at least {FixedSize} needed)");
         return (BinaryPrimitives.ReadUInt16BigEndian(payload[..2]),
                 BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(2, 2)),
                 BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(4, 2)),

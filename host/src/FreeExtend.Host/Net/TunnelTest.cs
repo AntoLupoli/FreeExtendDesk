@@ -19,16 +19,16 @@ internal static class TunnelTest
         for (int i = 0; i < args.Length - 1; i++) if (args[i] == "--seconds") seconds = int.Parse(args[i + 1]);
 
         var state = AdbTunnel.Current();
-        Console.WriteLine($"Stato adb: {state}");
+        Console.WriteLine($"adb state: {state}");
         if (state != DeviceState.Ready)
         {
             Console.Error.WriteLine(state == DeviceState.Unauthorized
-                ? "Il tablet non ha autorizzato il PC: accetta la richiesta 'Consenti debug USB' sul tablet."
-                : "Nessun tablet collegato (cavo USB, debug USB attivo).");
+                ? "The tablet has not authorized this PC: accept the 'Allow USB debugging' prompt on the tablet."
+                : "No tablet connected (USB cable, USB debugging on).");
             return 3;
         }
         AdbTunnel.EnsureReverse(Port);
-        Console.WriteLine($"adb reverse tcp:{Port} attivo.");
+        Console.WriteLine($"adb reverse tcp:{Port} is active.");
 
         await using var server = new StreamServer(Port, hello => ConfigPayload.Encode(hello.W, hello.H, 60, ReadOnlySpan<byte>.Empty));
         var connected = new TaskCompletionSource();
@@ -41,10 +41,10 @@ internal static class TunnelTest
         using var cts = new CancellationTokenSource();
         var run = server.RunAsync(cts.Token);
 
-        Console.WriteLine("In attesa dell'app sul tablet (apri FreeExtend, 60 s)...");
+        Console.WriteLine("Waiting for the app on the tablet (open FreeExtend, 60 s)...");
         if (await Task.WhenAny(connected.Task, Task.Delay(TimeSpan.FromSeconds(60))) != connected.Task)
         {
-            Console.Error.WriteLine("Nessuna connessione dal tablet.");
+            Console.Error.WriteLine("No connection from the tablet.");
             cts.Cancel();
             return 4;
         }
@@ -67,11 +67,11 @@ internal static class TunnelTest
         {
             elapsedS = ((lastPongUs == 0 ? CaptureClock.NowUs() : lastPongUs) - startUs) / 1e6;
             double mb = pongs * (double)PingPayloadBytes / (1024 * 1024);
-            Console.WriteLine($"Ping inviati: {sent}, risposte: {pongs}, dati: {mb:F1} MiB in {elapsedS:F1} s = {mb / elapsedS:F1} MiB/s ({mb * 8 / elapsedS * 1.048576:F0} Mbit/s)");
+            Console.WriteLine($"Pings sent: {sent}, replies: {pongs}, data: {mb:F1} MiB in {elapsedS:F1} s = {mb / elapsedS:F1} MiB/s ({mb * 8 / elapsedS * 1.048576:F0} Mbit/s)");
             if (rtts.Count > 0)
             {
                 var s = rtts.OrderBy(x => x).ToList();
-                Console.WriteLine($"RTT con coda (64 KiB per ping, {MaxInFlight} in volo): p50 {s[s.Count / 2] / 1000:F2} ms, p95 {s[(int)(s.Count * 0.95)] / 1000:F2} ms, min {s[0] / 1000:F2} ms");
+                Console.WriteLine($"RTT with queue (64 KiB per ping, {MaxInFlight} in flight): p50 {s[s.Count / 2] / 1000:F2} ms, p95 {s[(int)(s.Count * 0.95)] / 1000:F2} ms, min {s[0] / 1000:F2} ms");
             }
         }
         cts.Cancel();

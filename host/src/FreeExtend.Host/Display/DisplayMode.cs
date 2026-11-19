@@ -24,7 +24,7 @@ public static class ModeSelector
             if (best is null || Better(m, best.Value)) best = m;
         }
         return best ?? throw new NoSuitableModeException(
-            $"Nessun modo del driver adatto a {requested.Width}x{requested.Height}@{requested.RefreshHz} (stesso rapporto d'aspetto, non piu grande, refresh non superiore).");
+            $"No driver mode fits {requested.Width}x{requested.Height}@{requested.RefreshHz} (same aspect ratio, not larger, refresh not higher).");
     }
 
     private static bool Better(DisplayMode a, DisplayMode b)

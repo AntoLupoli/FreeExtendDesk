@@ -63,10 +63,10 @@ public static class DisplayController
     {
         int r = ChangeDisplaySettingsExW(deviceName, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero);
         if (r != DISP_CHANGE_SUCCESSFUL)
-            throw new InvalidOperationException($"Windows ha rifiutato la modifica di {deviceName} (codice {r}: 1=riavvio, -1=non riuscita, -2=modo non valido, -5=flag non validi).");
+            throw new InvalidOperationException($"Windows rejected the change of {deviceName} (code {r}: 1=restart needed, -1=failed, -2=bad mode, -5=bad flags).");
         r = ChangeDisplaySettingsExW(null, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero);   // applica le modifiche in sospeso
         if (r != DISP_CHANGE_SUCCESSFUL)
-            throw new InvalidOperationException($"Windows non ha applicato la configurazione degli schermi (codice {r}).");
+            throw new InvalidOperationException($"Windows did not apply the display configuration (code {r}).");
     }
 
     private static int RightEdgeOfAttachedDisplays(string except)

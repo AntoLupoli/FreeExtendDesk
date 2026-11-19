@@ -12,7 +12,7 @@ internal static class EncoderProbe
         // Su un portatile ibrido la GPU NVIDIA puo essere "a riposo": un device D3D11 sull'adattatore NVIDIA la attiva
         // prima di provare l'MFT NVENC.
         using var nvDevice = CreateNvidiaDevice();
-        Console.WriteLine(nvDevice != null ? "Device D3D11 su NVIDIA creato." : "Nessun adattatore NVIDIA trovato.");
+        Console.WriteLine(nvDevice != null ? "D3D11 device on NVIDIA created." : "No NVIDIA adapter found.");
         try
         {
             var output = new RegisterTypeInfo { GuidMajorType = MediaTypeGuids.Video, GuidSubtype = VideoFormatGuids.H264 };
@@ -29,13 +29,13 @@ internal static class EncoderProbe
                 try { mft = act.ActivateObject<IMFTransform>(); }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"    ATTIVAZIONE FALLITA: {ex.Message.Trim()}");
+                    Console.WriteLine($"    ACTIVATION FAILED: {ex.Message.Trim()}");
                     continue;
                 }
                 using var _ = mft;
                 bool isAsync = mft.Attributes.GetUInt32(TransformAttributeKeys.TransformAsync) != 0;
                 bool d3d11 = mft.Attributes.GetUInt32(TransformAttributeKeys.D3D11Aware) != 0;
-                Console.WriteLine($"    asincrono: {isAsync}, D3D11-aware: {d3d11}");
+                Console.WriteLine($"    async: {isAsync}, D3D11-aware: {d3d11}");
                 var inputs = new List<string>();
                 for (int i = 0; i < 32; i++)
                 {
@@ -46,9 +46,9 @@ internal static class EncoderProbe
                     }
                     catch { break; }
                 }
-                Console.WriteLine($"    ingressi prima di impostare l'uscita: {(inputs.Count == 0 ? "(nessuno: serve prima il tipo di uscita)" : string.Join(", ", inputs))}");
+                Console.WriteLine($"    inputs before setting the output: {(inputs.Count == 0 ? "(none: the output type is needed first)" : string.Join(", ", inputs))}");
             }
-            Console.WriteLine($"Encoder H.264 hardware trovati: {count}");
+            Console.WriteLine($"Hardware H.264 encoders found: {count}");
             return count > 0 ? 0 : 2;
         }
         finally
@@ -73,7 +73,7 @@ internal static class EncoderProbe
                 {
                     var desc = adapter!.Description1;
                     ulong luid = ((ulong)(uint)desc.Luid.HighPart << 32) | desc.Luid.LowPart;
-                    Console.WriteLine($"Adattatore {desc.Description} (LUID {luid:X}):");
+                    Console.WriteLine($"Adapter {desc.Description} (LUID {luid:X}):");
 
                     using var attrs = MediaFactory.MFCreateAttributes(1);
                     attrs.Set(MftEnumAdapterLuid, luid);
@@ -81,7 +81,7 @@ internal static class EncoderProbe
                     var output = new RegisterTypeInfo { GuidMajorType = MediaTypeGuids.Video, GuidSubtype = VideoFormatGuids.H264 };
                     uint flags = (uint)(EnumFlag.EnumFlagHardware | EnumFlag.EnumFlagSortandfilter);
                     MediaFactory.MFTEnum2(TransformCategoryGuids.VideoEncoder, flags, null, output, attrs, out IntPtr array, out uint n);
-                    Console.WriteLine($"  MFT trovati per questo adattatore: {n}");
+                    Console.WriteLine($"  MFTs found for this adapter: {n}");
                     for (int i = 0; i < n; i++)
                     {
                         var act = new IMFActivate(System.Runtime.InteropServices.Marshal.ReadIntPtr(array, i * IntPtr.Size));
@@ -89,11 +89,11 @@ internal static class EncoderProbe
                         try
                         {
                             using var mft = act.ActivateObject<IMFTransform>();
-                            Console.WriteLine($"  - {name}: ATTIVATO");
+                            Console.WriteLine($"  - {name}: ACTIVATED");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"  - {name}: attivazione fallita ({ex.Message.Trim()})");
+                            Console.WriteLine($"  - {name}: activation failed ({ex.Message.Trim()})");
                         }
                     }
                     if (array != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeCoTaskMem(array);

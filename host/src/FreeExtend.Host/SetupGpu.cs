@@ -13,7 +13,7 @@ internal static class SetupGpu
     {
         string? exe = Environment.ProcessPath;
         bool set = exe != null && new GpuPreference().IsHighPerformance(exe);
-        Console.WriteLine(set ? $"Prestazioni elevate: impostato per {exe}" : $"Prestazioni elevate: NON impostato per {exe}");
+        Console.WriteLine(set ? $"High performance: set for {exe}" : $"High performance: NOT set for {exe}");
         return set ? 0 : 1;
     }
 
@@ -22,20 +22,20 @@ internal static class SetupGpu
         string? exe = Environment.ProcessPath;
         if (exe == null || !exe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine("Lancia questo comando dall'eseguibile FreeExtend.Host.exe (non con 'dotnet ...'): la preferenza si lega al percorso dell'exe.");
+            Console.Error.WriteLine("Run this command from FreeExtend.Host.exe (not with 'dotnet ...'): the preference is bound to the exe path.");
             return 2;
         }
         var pref = new GpuPreference();
         if (remove)
         {
             pref.Remove(exe);
-            Console.WriteLine($"Preferenza grafica rimossa per: {exe}");
+            Console.WriteLine($"Graphics preference removed for: {exe}");
             return 0;
         }
         bool was = pref.IsHighPerformance(exe);
         pref.SetHighPerformance(exe);
-        Console.WriteLine(was ? $"Gia impostata: {exe}" : $"Impostato 'Prestazioni elevate' solo per: {exe}");
-        Console.WriteLine("Si annulla con: setup-gpu --remove  (oppure da Impostazioni > Sistema > Schermo > Grafica). Ora riavvia FreeExtend.");
+        Console.WriteLine(was ? $"Already set: {exe}" : $"Set 'High performance' only for: {exe}");
+        Console.WriteLine("Undo with: setup-gpu --remove  (or in Settings > System > Display > Graphics). Now restart FreeExtend.");
         return 0;
     }
 }

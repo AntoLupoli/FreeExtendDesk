@@ -29,7 +29,7 @@ internal static class EncodeTest
 
         using var source = new DesktopDuplicationSource(output);
         using var encoder = new MfH264Encoder(source.Device, new EncoderConfig(outW ?? source.Width, outH ?? source.Height, fps, kbps, quality, source.Width, source.Height, mftIndex));
-        Console.WriteLine($"Encoder: {encoder.EncoderName}  {outW ?? source.Width}x{outH ?? source.Height} (sorgente {source.Width}x{source.Height}) @{fps} fps, {kbps} kbit/s");
+        Console.WriteLine($"Encoder: {encoder.EncoderName}  {outW ?? source.Width}x{outH ?? source.Height} (source {source.Width}x{source.Height}) @{fps} fps, {kbps} kbit/s");
         foreach (var line in encoder.CodecApiLog) Console.WriteLine($"  ICodecAPI {line}");
 
         var latenciesUs = new List<double>();
@@ -54,7 +54,7 @@ internal static class EncodeTest
                 {
                     firstDone = true;
                     var nals = NalInspector.Parse(p.Data.Span);
-                    Console.WriteLine($"Primo pacchetto: {p.Data.Length} byte, NAL = [{string.Join(", ", nals.Select(n => n.Type))}] (7=SPS 8=PPS 5=IDR), keyframe={p.IsKeyframe}");
+                    Console.WriteLine($"First packet: {p.Data.Length} bytes, NAL = [{string.Join(", ", nals.Select(n => n.Type))}] (7=SPS 8=PPS 5=IDR), keyframe={p.IsKeyframe}");
                 }
             }
         };
@@ -77,18 +77,18 @@ internal static class EncodeTest
 
         lock (gate)
         {
-            Console.WriteLine($"Frame offerti: {offered}, codificati: {accepted}, saltati per fps: {encoder.SkippedForRate}, scartati (encoder occupato): {encoder.DroppedBusy}");
-            Console.WriteLine($"Pacchetti: {packets}, keyframe: {keyframes}, {bytes / 1024.0 / 1024.0:F2} MiB, {bytes * 8.0 / seconds / 1e6:F1} Mbit/s medi");
-            Console.WriteLine($"Ordine dei pacchetti = ordine di ingresso: {orderOk}");
+            Console.WriteLine($"Frames offered: {offered}, encoded: {accepted}, skipped for fps: {encoder.SkippedForRate}, dropped (encoder busy): {encoder.DroppedBusy}");
+            Console.WriteLine($"Packets: {packets}, keyframes: {keyframes}, {bytes / 1024.0 / 1024.0:F2} MiB, {bytes * 8.0 / seconds / 1e6:F1} Mbit/s average");
+            Console.WriteLine($"Packet order = input order: {orderOk}");
             if (latenciesUs.Count > 0)
             {
                 var sorted = latenciesUs.OrderBy(x => x).ToList();
-                Console.WriteLine($"Latenza cattura->pacchetto: media {latenciesUs.Average() / 1000:F2} ms, p50 {sorted[sorted.Count / 2] / 1000:F2} ms, p95 {sorted[(int)(sorted.Count * 0.95)] / 1000:F2} ms, max {sorted[^1] / 1000:F2} ms");
+                Console.WriteLine($"Capture->packet latency: mean {latenciesUs.Average() / 1000:F2} ms, p50 {sorted[sorted.Count / 2] / 1000:F2} ms, p95 {sorted[(int)(sorted.Count * 0.95)] / 1000:F2} ms, max {sorted[^1] / 1000:F2} ms");
             }
             var t = encoder.Timing;
-            Console.WriteLine($"Dove va il tempo (media su {t.Frames} frame): preparazione {t.PrepareMs:F2} ms (cattura->ingresso encoder), codifica {t.EncodeMs:F2} ms (ingresso->pacchetto)");
-            if (encoder.BltGpuMs > 0) Console.WriteLine($"Conversione colore (attesa GPU, solo con FX_SYNC_BLT=1): {encoder.BltGpuMs:F2} ms");
-            Console.WriteLine($"SPS+PPS noti: {encoder.ParameterSets.Length} byte");
+            Console.WriteLine($"Where the time goes (mean over {t.Frames} frames): prepare {t.PrepareMs:F2} ms (capture->encoder input), encode {t.EncodeMs:F2} ms (input->packet)");
+            if (encoder.BltGpuMs > 0) Console.WriteLine($"Color conversion (GPU wait, only with FX_SYNC_BLT=1): {encoder.BltGpuMs:F2} ms");
+            Console.WriteLine($"SPS+PPS known: {encoder.ParameterSets.Length} bytes");
         }
         return packets > 0 ? 0 : 2;
     }

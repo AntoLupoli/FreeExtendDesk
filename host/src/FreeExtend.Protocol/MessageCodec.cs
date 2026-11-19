@@ -17,7 +17,7 @@ public static class MessageCodec
     public static void Write(Stream stream, Message message)
     {
         if (message.Payload.Length > MaxPayload)
-            throw new ProtocolException($"payload di {message.Payload.Length} byte oltre il massimo di {MaxPayload}");
+            throw new ProtocolException($"payload of {message.Payload.Length} bytes exceeds the maximum of {MaxPayload}");
 
         Span<byte> header = stackalloc byte[HeaderSize];
         header.Clear();
@@ -40,20 +40,20 @@ public static class MessageCodec
         Span<byte> header = stackalloc byte[HeaderSize];
         int got = ReadFully(stream, header);
         if (got == 0) return null;
-        if (got < HeaderSize) throw new ProtocolException($"intestazione troncata ({got} di {HeaderSize} byte)");
+        if (got < HeaderSize) throw new ProtocolException($"truncated header ({got} of {HeaderSize} bytes)");
 
         byte type = header[0];
         if (type < (byte)MessageType.Hello || type > (byte)MessageType.RequestKeyframe)
-            throw new ProtocolException($"tipo di messaggio sconosciuto: {type}");
+            throw new ProtocolException($"unknown message type: {type}");
 
         uint length = BinaryPrimitives.ReadUInt32BigEndian(header.Slice(4, 4));
         if (length > MaxPayload)
-            throw new ProtocolException($"payload dichiarato di {length} byte oltre il massimo di {MaxPayload}");
+            throw new ProtocolException($"declared payload of {length} bytes exceeds the maximum of {MaxPayload}");
 
         long timestampUs = BinaryPrimitives.ReadInt64BigEndian(header.Slice(8, 8));
         var payload = new byte[length];
         int payloadGot = ReadFully(stream, payload);
-        if (payloadGot < length) throw new ProtocolException($"payload troncato ({payloadGot} di {length} byte)");
+        if (payloadGot < length) throw new ProtocolException($"truncated payload ({payloadGot} of {length} bytes)");
 
         return new Message((MessageType)type, header[1], timestampUs, payload);
     }
